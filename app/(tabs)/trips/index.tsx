@@ -2,8 +2,12 @@ import { View, Text, TextInput, Modal, Button } from 'react-native'
 import React, { useState } from 'react'
 import TripFolder from '@/components/TripFolder'
 import CustomButton from '@/components/CustomButton'
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
+
 
 type Trip = {
+  id: string;
   tripName: string;
   location: string;
   dates: string;
@@ -17,7 +21,8 @@ const Home = () => {
   const [dates, setDates] = useState('');
 
   const addTrip = () => {
-    setTrips([...trip, { tripName, location, dates }]);
+    const newTrip = { id: uuidv4(), tripName, location, dates };
+    setTrips([...trip, newTrip]);
     setModalVisible(false);
     setTripName('');
     setLocation('');
@@ -33,6 +38,7 @@ const Home = () => {
           tripName={tripItem.tripName}
           location={tripItem.location}
           dates={tripItem.dates}
+          id={tripItem.id}
         />
       ))}
 
