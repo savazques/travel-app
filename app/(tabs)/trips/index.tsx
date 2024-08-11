@@ -31,6 +31,14 @@ const Home = () => {
 
   return (
     <View className="flex-1 relative m-2">
+      <View className='mt-20 w-full mb-5'>
+        <View className='bg-indigo justify-center items-center '>
+          <Text className='font-bold text-xl'>
+            Trips
+          </Text>
+        </View>
+
+      </View>
       {trip.map((tripItem, index) => (
         <TripFolder 
           key={index}
