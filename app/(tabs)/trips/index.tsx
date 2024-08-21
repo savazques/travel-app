@@ -1,9 +1,11 @@
-import { View, Text, TextInput, Modal, Button } from 'react-native'
-import React, { useState } from 'react'
+import { View, Text, TextInput, Modal, Button, ScrollView } from 'react-native'
+import React, { useState, useEffect } from 'react'
 import TripFolder from '@/components/TripFolder'
 import CustomButton from '@/components/CustomButton'
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '@/lib/supabase';
+
 
 
 type Trip = {
@@ -13,6 +15,8 @@ type Trip = {
   dates: string;
 };
 
+
+
 const Home = () => {
   const [trip, setTrips] = useState<Trip[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
@@ -21,13 +25,65 @@ const Home = () => {
   const [dates, setDates] = useState('');
 
   const addTrip = () => {
-    const newTrip = { id: uuidv4(), tripName, location, dates };
+    const tripId = uuidv4()
+    const newTrip = { id: tripId, tripName, location, dates };
     setTrips([...trip, newTrip]);
     setModalVisible(false);
     setTripName('');
     setLocation('');
     setDates('');
+    saveTrip(tripId)
   };
+
+
+  const saveTrip = async ( id: string) => {
+    const {data, error} = await supabase
+    .from ('tripData')
+    .insert([
+      {id: id, tripName: `${tripName}`, location: `${location}`, dates: `${dates}`}
+    ])
+    if (error) {
+      console.error('Error saving trip', error)
+    } else {
+      console.log('Trip saved:', data)
+    }
+  }
+
+  const deleteTrip = async(id:string) => {
+    if (!id) return;
+    console.log('delete data with id', id)
+    const {data, error} = await supabase 
+    .from('tripData')
+    .delete()
+    .eq('id', id )
+    
+    if (error) {
+      console.error('Error', error.message)
+      return
+    } else {
+      console.log('trip deleted')
+      setTrips(trip.filter(tripItem => tripItem.id != id))
+    }
+
+  }
+
+  useEffect(() => {
+    const fetchTrips = async() => {
+      const {data, error} = await supabase
+        .from('tripData')
+        .select('*')
+
+      if (error) {
+        console.error('Error Fetching Trips', error )
+      } else {
+        console.log('Added Trip Successfully') 
+        setTrips(data)
+      }
+    }
+
+    fetchTrips()
+  }, []);
+
 
   return (
     <View className="flex-1 relative m-2">
@@ -37,27 +93,31 @@ const Home = () => {
             Trips
           </Text>
         </View>
-
+      
       </View>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       {trip.map((tripItem, index) => (
-        <TripFolder 
-          key={index}
-          onPress={() => console.log('click')}
-          tripName={tripItem.tripName}
-          location={tripItem.location}
-          dates={tripItem.dates}
-          id={tripItem.id}
-        />
-      ))}
-
-      <View className='absolute bottom-0 w-full'>
-        <CustomButton
-          onPress={() => setModalVisible(true)}
-          title='Plan a New Trip'
-          textStyles='font-bold'
-        />
-      </View>
-
+            <TripFolder 
+              key={index}
+              tripId={tripItem.id}
+              tripName={tripItem.tripName}
+              location={tripItem.location}
+              dates={tripItem.dates}
+              onDelete={deleteTrip}
+            />
+            
+          ))}
+      </ScrollView>
+        
+          <View className='absolute bottom-0 w-full'>
+            <CustomButton
+              onPress={() => setModalVisible(true)}
+              title='Plan a New Trip'
+              textStyles='font-bold'
+            />
+          </View>
+   
+      
       <Modal
         animationType="slide"
         transparent={true}
