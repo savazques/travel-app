@@ -5,6 +5,9 @@ import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import ModalComponent from '@/components/Modal';
 import { supabase } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
+import { SupabaseAuthClient } from '@supabase/supabase-js/dist/module/lib/SupabaseAuthClient';
+
 
 const TripDetails = () => {
   const { id } = useLocalSearchParams();
@@ -39,20 +42,110 @@ const TripDetails = () => {
     setcostModalInput1(''); // Clear inputs after submission
     setcostModalInput2('');
     setcostModalVisible(false);
+    saveCost(amount, description)
   
   }
   const handleAddItinerary = (time: string, description: string) => {
     setItinerary([...itinerary, { time, description }]);
     setModalVisible(false);
+    saveItinerary(time, description);
   };
 
   const handleaddToHighlights = (title: string, description: string) => {
     setHighlight([...highlight, {title, description}])
     sethighlightModalVisible(false)
+    saveHighlights(title, description)
   }
 
+  const saveHighlights = async(name: string, description: string) => {
+    const {data, error} = await supabase
+    .from('highlights')
+    .insert({trip_id: id, highlight_name: name, highlight_description: description})
+
+    if(error){
+      console.log('Error adding highlight', error)
+    } else {
+      console.log('Successfully added highlight', data)
+    }
+  }
+  const saveItinerary = async(time: string, description: string) => {
+    const {data, error} = await supabase
+    .from('itineraries')
+    .insert({trip_id: id, time: time, description: description})
+
+    if(error) {
+      console.error('Error saving Itinerary', error)
+    } else {
+      console.log("Success saving itinerary", data)
+    }
+  }
+
+  const saveCost = async(cost: number, description: string) => {
+    const {data, error} = await supabase
+    .from('expenses')
+    .insert({trip_id: id, expense_name: description, expense_cost: cost})
+
+    if (error) {
+      console.error('Error Saving Cost', error)
+    } else {
+      console.log('Successful adding cost') 
+    }
+  }
+  
+
+  useEffect(() => {
+    const fetchItinerary = async() => {
+      const {data, error} = await supabase
+        .from('itineraries')
+        .select('*')
+
+      if (error) {
+        console.error('Error Fetching Trips', error )
+      } else {
+        console.log('Added Trip Successfully') 
+        setItinerary(data)
+      }
+    }
+
+    fetchItinerary()
+  }, []);
+
+  useEffect(() => {
+    const fetchHighlights = async() => {
+      const {data, error} = await supabase
+      .from('highlights')
+      .select('*')
+
+      if(error) {
+        console.error('Error fetching Highlights', error)
+      } else {
+        console.log('Successful Displaying Highlights', data)
+        setHighlight(data)
+      }
+    }
+    fetchHighlights()
+  },[]);
 
 
+  useEffect(() => {
+    const fetchCost = async() => {
+      const {data, error} = await supabase
+        .from('expenses')
+        .select('expense_cost')
+
+      if (error) {
+        console.error('Error Fetching Expenses', error )
+      } else {
+        console.log('Added Expense Successfully') 
+        const total = data.reduce((sum, item) => sum + item.expense_cost, 0)
+        setCostTotal(total)
+      }
+    }
+
+    fetchCost()
+  }, []);
+
+ 
 
   return (
     <View className='flex-1 m-2 mt-20 justify-between'>
@@ -109,8 +202,8 @@ const TripDetails = () => {
                 data={highlight}
                 renderItem={({item}) => (
                   <View className='flex-row items-center'>
-                    <Text>{item.title}: </Text>
-                    <Text>{item.description}</Text>
+                    <Text>{item.highlight_name} </Text>
+                    <Text>{item.highlight_description}</Text>
                   </View>
                 )}
                 keyExtractor={(item, index) => index.toString()}
@@ -159,7 +252,7 @@ const TripDetails = () => {
         onClose={() => sethighlightModalVisible(false)}
         onSubmit={handleaddToHighlights}
       />
-    </View>
+  </View>
   );
 };
 

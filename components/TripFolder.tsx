@@ -4,6 +4,7 @@ import { Link } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 
+
 interface TripFolderProps {
     tripId: string;
     tripName: string;
